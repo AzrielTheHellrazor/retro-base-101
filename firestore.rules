@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      // Leaderboard için herkes okuyabilir
+      allow read: if true;
+
+      // Yeni kullanıcı oluşturma - wallet adresi userId ile eşleşmeli
+      allow create: if request.resource.data.walletAddress == userId;
+
+      // Güncelleme - wallet adresi userId ile eşleşmeli ve totalPaid sadece artırılabilir
+      allow update: if
+        request.resource.data.walletAddress == userId &&
+        (!request.resource.data.keys().hasAny(['totalPaid']) ||
+         !resource.data.keys().hasAny(['totalPaid']) ||
+         request.resource.data.totalPaid >= resource.data.totalPaid);
+    }
+  }
+}
+
