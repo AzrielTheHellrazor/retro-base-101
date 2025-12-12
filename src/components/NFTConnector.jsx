@@ -56,13 +56,45 @@ function NFTConnector({ onNFTSelect, onWalletConnect, walletAddress: externalWal
         if (window.base && window.base.ethereum) {
           provider = window.base.ethereum
         } else if (window.ethereum) {
-          // Base network'te olduğundan emin ol
+          provider = window.ethereum
+          // Base network'te değilse otomatik olarak Base ağına geçiş yapmayı dene
           const chainId = await window.ethereum.request({ method: 'eth_chainId' })
           if (chainId !== BASE_CHAIN_ID) {
-            setError('Please switch to Base network in your Base wallet')
-            return
+            try {
+              await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: BASE_CHAIN_ID }],
+              })
+            } catch (switchError) {
+              // Eğer ağ ekli değilse, eklemeyi dene
+              if (switchError.code === 4902) {
+                try {
+                  await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [
+                      {
+                        chainId: BASE_CHAIN_ID,
+                        rpcUrls: [BASE_RPC_URL],
+                        chainName: 'Base Mainnet',
+                        nativeCurrency: {
+                          name: 'Ether',
+                          symbol: 'ETH',
+                          decimals: 18,
+                        },
+                        blockExplorerUrls: ['https://basescan.org'],
+                      },
+                    ],
+                  })
+                } catch (addError) {
+                  setError('Base network could not be added to your wallet.')
+                  return
+                }
+              } else {
+                setError('Please approve switching to the Base network in your wallet.')
+                return
+              }
+            }
           }
-          provider = window.ethereum
         } else {
           setError('Base wallet not found. Please use Base App or install Base wallet.')
           return
