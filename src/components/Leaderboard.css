@@ -2,74 +2,170 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 20px;
+  padding: 0 16px 40px;
   min-height: 100vh;
+  width: 100%;
+}
+
+.leaderboard-container .page-title {
+  margin-bottom: 8px;
 }
 
 .top-device {
-  margin-bottom: 60px;
+  margin-top: 20px;
+  margin-bottom: 80px;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
+  gap: 0; /* Gap kaldırıldı, negative margin kullanacağız */
+  animation: fadeInScale 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .rank-badge {
-  background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-  color: white;
-  padding: 8px 20px;
-  border-radius: 20px;
-  font-weight: 600;
+  background: linear-gradient(135deg, var(--base-blue) 0%, var(--base-blue-dark) 100%);
+  color: var(--base-text);
+  padding: 10px 24px;
+  border-radius: 24px;
+  font-weight: 700;
   font-size: 18px;
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+  box-shadow:
+    0 4px 16px rgba(0, 82, 255, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .rank-badge.rank-1 {
-  background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
-  font-size: 24px;
-  padding: 12px 28px;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  box-shadow:
+    0 8px 24px rgba(255, 215, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  font-size: 28px;
+  padding: 14px 32px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 .device-wrapper {
-  transform: scale(0.7);
+  transform: scale(0.65);
   transform-origin: center;
+  margin-top: -32px; /* Rank badge'e daha yakın */
+  margin-bottom: -50px; /* User info'ya daha yakın */
 }
 
 .user-info {
   text-align: center;
   padding: 16px 24px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(20px);
-  border-radius: 16px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  min-width: 220px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  background: var(--base-card);
+  backdrop-filter: blur(30px);
+  border-radius: 20px;
+  border: 1px solid var(--base-border);
+  min-width: 240px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.user-info:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(0, 82, 255, 0.3);
+}
+
+.avatar-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--base-blue) 0%, var(--base-blue-dark) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--base-text);
+  font-weight: 700;
+  font-size: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.username {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--base-text);
+  letter-spacing: -0.3px;
 }
 
 .wallet-short {
   font-family: 'Courier New', monospace;
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.8);
-  font-size: 15px;
-  margin-bottom: 6px;
+  color: var(--base-text-secondary);
+  font-size: 16px;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
 }
 
 .total-paid {
-  font-weight: 700;
-  color: #007aff;
-  font-size: 18px;
+  font-weight: 800;
+  color: var(--base-blue-light);
+  font-size: 20px;
   font-family: 'Courier New', monospace;
+  text-shadow: 0 0 20px rgba(0, 82, 255, 0.5);
 }
 
 .device-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 40px;
+  gap: 48px;
   width: 100%;
-  max-width: 700px;
+  max-width: 900px;
   justify-items: center;
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .grid-item {
@@ -77,54 +173,308 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
+  gap: 0; /* Gap kaldırıldı, negative margin kullanacağız */
   position: relative;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.grid-item:hover {
+  transform: translateY(-4px);
 }
 
 .device-wrapper-small {
-  transform: scale(0.5);
+  transform: scale(0.45);
   transform-origin: center;
+  margin-top: -32px; /* 1. sıra ile aynı oran */
+  margin-bottom: -50px; /* 1. sıra ile aynı oran */
 }
 
 .rank-badge:not(.rank-1) {
-  background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-  color: white;
-  padding: 6px 18px;
+  background: linear-gradient(135deg, var(--base-blue) 0%, var(--base-blue-dark) 100%);
+  color: var(--base-text);
+  padding: 8px 20px;
   font-size: 16px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+  border-radius: 20px;
+  box-shadow:
+    0 4px 12px rgba(0, 82, 255, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-info-small {
   text-align: center;
-  padding: 12px 18px;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(15px);
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  min-width: 170px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  padding: 16px 24px;
+  background: var(--base-card);
+  backdrop-filter: blur(30px);
+  border-radius: 20px;
+  border: 1px solid var(--base-border);
+  min-width: 240px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.user-info-small:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.user-profile-small {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.user-avatar-small {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(0, 82, 255, 0.3);
+}
+
+.avatar-placeholder-small {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--base-blue) 0%, var(--base-blue-dark) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--base-text);
+  font-weight: 700;
+  font-size: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.username-small {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--base-text);
+  letter-spacing: -0.3px;
 }
 
 .wallet-short-small {
   font-family: 'Courier New', monospace;
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.75);
-  font-size: 13px;
-  margin-bottom: 4px;
+  color: var(--base-text-secondary);
+  font-size: 16px;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
 }
 
 .total-paid-small {
-  font-weight: 700;
-  color: #007aff;
-  font-size: 15px;
+  font-weight: 800;
+  color: var(--base-blue-light);
+  font-size: 20px;
   font-family: 'Courier New', monospace;
+  text-shadow: 0 0 20px rgba(0, 82, 255, 0.5);
 }
 
 /* Responsive tasarım */
+@media (max-width: 1024px) {
+  .device-grid {
+    gap: 40px;
+    max-width: 800px;
+  }
+}
+
 @media (max-width: 768px) {
+  .leaderboard-container {
+    padding: 0 16px 40px;
+  }
+
+  .top-device {
+    margin-top: 16px;
+    margin-bottom: 48px;
+  }
+
+  .rank-badge.rank-1 {
+    font-size: 22px;
+    padding: 10px 24px;
+  }
+
+  .device-wrapper {
+    transform: scale(0.75);
+    margin-top: -28px; /* Tablet'te daha yakın */
+    margin-bottom: -40px; /* Tablet'te daha yakın */
+  }
+
+  .user-info {
+    padding: 16px 24px;
+    min-width: 200px;
+  }
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .avatar-placeholder {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .username {
+    font-size: 16px;
+  }
+
+  .wallet-short {
+    font-size: 15px;
+  }
+
+  .total-paid {
+    font-size: 18px;
+  }
+
   .device-grid {
     grid-template-columns: 1fr;
+    gap: 40px;
+    max-width: 100%;
+  }
+
+  .device-wrapper-small {
+    transform: scale(0.65);
+    margin-top: -28px; /* 1. sıra ile aynı */
+    margin-bottom: -40px; /* 1. sıra ile aynı */
+  }
+
+  .user-info-small {
+    padding: 16px 24px;
+    min-width: 200px;
+  }
+
+  .user-avatar-small {
+    width: 36px;
+    height: 36px;
+  }
+
+  .avatar-placeholder-small {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .username-small {
+    font-size: 16px;
+  }
+
+  .wallet-short-small {
+    font-size: 15px;
+  }
+
+  .total-paid-small {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .leaderboard-container {
+    padding: 0 12px 32px;
+  }
+
+  .top-device {
+    margin-top: 8px; /* Küçültüldü: 12px'den */
+    margin-bottom: 32px; /* Küçültüldü: 40px'den */
+  }
+
+  .rank-badge.rank-1 {
+    font-size: 18px; /* Küçültüldü: 20px'den */
+    padding: 4px 14px; /* Küçültüldü: 6px 18px'den */
+  }
+
+  .rank-badge:not(.rank-1) {
+    padding: 4px 14px; /* 1. sıra ile aynı */
+    font-size: 18px; /* 1. sıra ile aynı */
+  }
+
+  .device-wrapper {
+    transform: scale(0.65);
+    margin-top: -44px; /* Çok agresif yakınlaştırma */
+    margin-bottom: -64px; /* Çok agresif yakınlaştırma */
+  }
+
+  .device-wrapper-small {
+    transform: scale(0.55);
+    margin-top: -44px; /* 1. sıra ile aynı */
+    margin-bottom: -64px; /* 1. sıra ile aynı */
+  }
+
+  .user-info {
+    padding: 8px 12px;
+    min-width: 140px;
+  }
+
+  .user-avatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  .avatar-placeholder {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .username {
+    font-size: 13px;
+  }
+
+  .user-profile {
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .user-info-small {
+    padding: 8px 12px; /* 1. sıra ile aynı */
+    min-width: 140px; /* 1. sıra ile aynı */
+  }
+
+  .user-avatar-small {
+    width: 24px; /* 1. sıra ile aynı */
+    height: 24px;
+  }
+
+  .avatar-placeholder-small {
+    width: 24px; /* 1. sıra ile aynı */
+    height: 24px;
+    font-size: 12px; /* 1. sıra ile aynı */
+  }
+
+  .username-small {
+    font-size: 13px; /* 1. sıra ile aynı */
+  }
+
+  .user-profile-small {
+    gap: 8px; /* 1. sıra ile aynı */
+    margin-bottom: 4px; /* 1. sıra ile aynı */
+  }
+
+  .wallet-short {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  .wallet-short-small {
+    font-size: 12px; /* 1. sıra ile aynı */
+    margin-bottom: 4px; /* 1. sıra ile aynı */
+  }
+
+  .total-paid {
+    font-size: 15px;
+  }
+
+  .total-paid-small {
+    font-size: 15px; /* 1. sıra ile aynı */
+  }
+
+  .device-grid {
     gap: 24px;
   }
 }

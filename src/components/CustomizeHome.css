@@ -1,0 +1,147 @@
+.customize-home-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 40px;
+}
+
+.customize-home-container .page-title {
+  margin-bottom: 20px;
+}
+
+/* Feature Cards Container */
+.feature-cards {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 20px;
+  margin-top: -20px;
+}
+
+/* Individual Feature Card */
+.feature-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--base-card);
+  border: 1px solid var(--base-border);
+  border-radius: 20px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(20px);
+}
+
+.feature-card:hover {
+  transform: translateX(4px);
+  border-color: var(--base-blue);
+  box-shadow: 0 4px 20px rgba(0, 82, 255, 0.15);
+}
+
+/* Left Accent Bar */
+.feature-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  border-radius: 20px 0 0 20px;
+}
+
+/* Feature Icon */
+.feature-icon {
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Feature Content */
+.feature-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.feature-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--base-text);
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.feature-description {
+  font-size: 13px;
+  color: var(--base-text-secondary);
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .feature-cards {
+    padding: 0 16px;
+    gap: 10px;
+    margin-top: -30px;
+  }
+
+  .feature-card {
+    padding: 14px 16px;
+    border-radius: 18px;
+    gap: 12px;
+  }
+
+  .feature-icon {
+    font-size: 22px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .feature-title {
+    font-size: 14px;
+  }
+
+  .feature-description {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .feature-cards {
+    padding: 0 12px;
+    gap: 8px;
+    margin-top: -40px;
+  }
+
+  .feature-card {
+    padding: 12px 14px;
+    border-radius: 16px;
+    gap: 10px;
+  }
+
+  .feature-accent {
+    width: 4px;
+  }
+
+  .feature-icon {
+    font-size: 20px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .feature-title {
+    font-size: 13px;
+  }
+
+  .feature-description {
+    font-size: 11px;
+  }
+}

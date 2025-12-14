@@ -2,15 +2,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  margin-top: 32px;
-  padding: 24px;
-  background: rgba(255, 255, 255, 0.7);
+  gap: 20px;
+  margin-top: 12px;
+  padding: 28px;
+  background: var(--base-card);
   backdrop-filter: blur(30px) saturate(180%);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  max-width: 400px;
+  border: 1px solid var(--base-border);
+  border-radius: 24px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  max-width: 500px;
   width: 100%;
 }
 
@@ -23,21 +25,23 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: rgba(0, 122, 255, 0.1);
-  border-radius: 12px;
+  padding: 16px 20px;
+  background: rgba(0, 82, 255, 0.15);
+  border: 1px solid rgba(0, 82, 255, 0.3);
+  border-radius: 16px;
   font-size: 16px;
 }
 
 .total-paid .label {
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.7);
+  font-weight: 600;
+  color: var(--base-text-secondary);
 }
 
 .total-paid .amount {
-  font-weight: 600;
-  color: #007aff;
+  font-weight: 700;
+  color: var(--base-blue-light);
   font-family: 'Courier New', monospace;
+  text-shadow: 0 0 15px rgba(0, 82, 255, 0.5);
 }
 
 .payment-input-group {
@@ -49,20 +53,27 @@
 
 .payment-input {
   flex: 1;
-  padding: 12px 16px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 14px 18px;
+  border: 1px solid var(--base-border);
   border-radius: 12px;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 600;
   text-align: center;
   outline: none;
   transition: all 0.2s;
   font-family: 'Courier New', monospace;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--base-text);
+}
+
+.payment-input::placeholder {
+  color: var(--base-text-tertiary);
 }
 
 .payment-input:focus {
-  border-color: #007aff;
-  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+  border-color: var(--base-blue);
+  box-shadow: 0 0 0 4px rgba(0, 82, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .payment-input:disabled {
@@ -71,28 +82,32 @@
 }
 
 .eth-label {
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.7);
-  font-size: 16px;
+  font-weight: 700;
+  color: var(--base-text);
+  font-size: 17px;
 }
 
 .payment-button {
   width: 100%;
-  padding: 14px 28px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-  border: none;
+  padding: 16px 32px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--base-text);
+  background: linear-gradient(135deg, var(--base-blue) 0%, var(--base-blue-dark) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+  box-shadow:
+    0 4px 16px rgba(0, 82, 255, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .payment-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
+  box-shadow:
+    0 8px 24px rgba(0, 82, 255, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .payment-button:active:not(:disabled) {
@@ -107,9 +122,10 @@
 
 .payment-error {
   padding: 12px 20px;
-  background: rgba(255, 59, 48, 0.1);
-  color: #ff3b30;
-  border-radius: 8px;
+  background: rgba(255, 59, 48, 0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  border-radius: 12px;
   font-size: 14px;
   text-align: center;
   width: 100%;
@@ -117,8 +133,61 @@
 
 .payment-note {
   text-align: center;
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--base-text-tertiary);
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .payment-container {
+    padding: 24px 20px;
+    margin-top: 8px;
+  }
+
+  .total-paid {
+    padding: 14px 18px;
+    font-size: 15px;
+  }
+
+  .payment-input {
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+
+  .eth-label {
+    font-size: 16px;
+  }
+
+  .payment-button {
+    padding: 14px 28px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-container {
+    padding: 20px 16px;
+    margin-top: 4px;
+  }
+
+  .total-paid {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+
+  .payment-input {
+    padding: 10px 14px;
+    font-size: 15px;
+  }
+
+  .eth-label {
+    font-size: 15px;
+  }
+
+  .payment-button {
+    padding: 12px 24px;
+    font-size: 15px;
+  }
 }
 

@@ -31,23 +31,21 @@ function Leaderboard() {
   
   return (
     <div className="leaderboard-container">
-      <h1 style={{ 
-        textAlign: 'center', 
-        marginBottom: '40px',
-        fontSize: '32px',
-        fontWeight: '600',
-        color: 'rgba(0, 0, 0, 0.8)',
-        letterSpacing: '-0.5px'
-      }}>
-        Retro NFT Leaderboard
+      <h1 className="page-title">
+        Leaderboard
       </h1>
       
       {leaderboardData.length === 0 ? (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '60px 20px',
-          color: 'rgba(0, 0, 0, 0.5)',
-          fontSize: '18px'
+        <div style={{
+          textAlign: 'center',
+          padding: '80px 20px',
+          color: 'var(--base-text-secondary)',
+          fontSize: '18px',
+          background: 'var(--base-card)',
+          borderRadius: '24px',
+          border: '1px solid var(--base-border)',
+          maxWidth: '500px',
+          margin: '0 auto'
         }}>
           No entries yet. Be the first to connect your wallet and join the leaderboard!
         </div>
@@ -65,8 +63,28 @@ function Leaderboard() {
                 />
               </div>
               <div className="user-info">
-                <div className="wallet-short">{topUser.walletAddress?.slice(0, 6)}...{topUser.walletAddress?.slice(-4)}</div>
-                <div className="total-paid">{parseFloat(topUser.totalPaid || 0).toFixed(6)} ETH</div>
+                {topUser.username ? (
+                  <div className="user-profile">
+                    {topUser.avatar ? (
+                      <img
+                        src={topUser.avatar}
+                        alt={topUser.username}
+                        className="user-avatar"
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                        }}
+                      />
+                    ) : (
+                      <div className="avatar-placeholder">
+                        {topUser.username.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="username">{topUser.username}</div>
+                  </div>
+                ) : (
+                  <div className="wallet-short">{topUser.walletAddress?.slice(0, 6)}...{topUser.walletAddress?.slice(-4)}</div>
+                )}
+                <div className="total-paid">{parseFloat(topUser.totalPaid || 0).toFixed(2)} USDC</div>
               </div>
             </div>
           )}
@@ -85,8 +103,28 @@ function Leaderboard() {
                     />
                   </div>
                   <div className="user-info-small">
-                    <div className="wallet-short-small">{user.walletAddress?.slice(0, 6)}...{user.walletAddress?.slice(-4)}</div>
-                    <div className="total-paid-small">{parseFloat(user.totalPaid || 0).toFixed(6)} ETH</div>
+                    {user.username ? (
+                      <div className="user-profile-small">
+                        {user.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={user.username}
+                            className="user-avatar-small"
+                            onError={(e) => {
+                              e.target.style.display = 'none'
+                            }}
+                          />
+                        ) : (
+                          <div className="avatar-placeholder-small">
+                            {user.username.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="username-small">{user.username}</div>
+                      </div>
+                    ) : (
+                      <div className="wallet-short-small">{user.walletAddress?.slice(0, 6)}...{user.walletAddress?.slice(-4)}</div>
+                    )}
+                    <div className="total-paid">{parseFloat(user.totalPaid || 0).toFixed(2)} USDC</div>
                   </div>
                 </div>
               ))}

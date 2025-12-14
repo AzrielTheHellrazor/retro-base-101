@@ -8,7 +8,7 @@ import './PaymentButton.css'
 const PAYMENT_ADDRESS = import.meta.env.VITE_PAYMENT_ADDRESS || '0x0000000000000000000000000000000000000000'
 
 function PaymentButton({ walletAddress, onPaymentSuccess }) {
-  const [amount, setAmount] = useState('0.001')
+  const [amount, setAmount] = useState('1.00')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
@@ -53,18 +53,10 @@ function PaymentButton({ walletAddress, onPaymentSuccess }) {
 
       // Transaction'ı bekle
       const receipt = await tx.wait()
-      console.log('Transaction successful:', {
-        hash: tx.hash,
-        blockNumber: receipt.blockNumber,
-        walletAddress,
-        amount
-      })
 
       // Firebase'e kaydet
       try {
-        console.log('Attempting to save payment to Firebase...')
         await addPayment(walletAddress, amount, tx.hash)
-        console.log('Payment saved successfully to Firebase')
       } catch (firebaseError) {
         console.error('Firebase save error:', firebaseError)
         console.error('Firebase error code:', firebaseError.code)
@@ -132,22 +124,22 @@ function PaymentButton({ walletAddress, onPaymentSuccess }) {
       <div className="payment-info">
         <div className="total-paid">
           <span className="label">Total Paid:</span>
-          <span className="amount">{totalPaid.toFixed(4)} ETH</span>
+          <span className="amount">{totalPaid.toFixed(2)} USDC</span>
         </div>
       </div>
-      
+
       <div className="payment-input-group">
         <input
           type="number"
-          step="0.0001"
-          min="0.0001"
+          step="0.01"
+          min="0.01"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           className="payment-input"
-          placeholder="0.001"
+          placeholder="1.00"
           disabled={loading}
         />
-        <span className="eth-label">ETH</span>
+        <span className="eth-label">USDC</span>
       </div>
 
       <button
@@ -161,7 +153,7 @@ function PaymentButton({ walletAddress, onPaymentSuccess }) {
       {error && <div className="payment-error">{error}</div>}
       
       <div className="payment-note">
-        <small>Pay ETH to move up in the leaderboard. Higher payments = higher rank!</small>
+        <small>Pay USDC to move up in the leaderboard. Higher payments = higher rank!</small>
       </div>
     </div>
   )

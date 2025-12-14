@@ -23,6 +23,26 @@ function NFTConnector({ onNFTSelect, onWalletConnect, walletAddress: externalWal
       setWalletAddress(externalWalletAddress)
     }
   }, [externalWalletAddress])
+
+  // Sayfa yüklendiğinde otomatik wallet bağlantısı (Base Mini App için)
+  useEffect(() => {
+    if (!walletAddress && !externalWalletAddress) {
+      // Sadece Base Mini App içinde otomatik bağlan
+      const autoConnect = async () => {
+        try {
+          const context = await sdk.context
+          if (context && context.user && context.user.custodyAddress) {
+            // Base App içinde, otomatik bağlan
+            await connectWallet()
+          }
+        } catch (err) {
+          // SDK context yok, normal web browser'da - otomatik bağlanma
+        }
+      }
+      autoConnect()
+    }
+  }, [])
+
   const [nfts, setNfts] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -47,7 +67,7 @@ function NFTConnector({ onNFTSelect, onWalletConnect, walletAddress: externalWal
           }
         }
       } catch (sdkError) {
-        console.log('SDK context not available, trying direct wallet connection')
+        // SDK context not available
       }
 
       // Eğer SDK'dan address alamadıysak, direkt wallet bağlantısı dene
@@ -58,6 +78,7 @@ function NFTConnector({ onNFTSelect, onWalletConnect, walletAddress: externalWal
         } else if (window.ethereum) {
           provider = window.ethereum
           // Base network'te değilse otomatik olarak Base ağına geçiş yapmayı dene
+
           const chainId = await window.ethereum.request({ method: 'eth_chainId' })
           if (chainId !== BASE_CHAIN_ID) {
             try {
@@ -156,23 +177,17 @@ function NFTConnector({ onNFTSelect, onWalletConnect, walletAddress: externalWal
       const alchemyKey = import.meta.env.VITE_ALCHEMY_API_KEY
       let response = null
 
-      console.log('Alchemy API Key length:', alchemyKey ? alchemyKey.length : 0)
-      console.log('Wallet address:', walletAddress)
-
       if (alchemyKey) {
         try {
           // Alchemy API v3 - Base Mainnet için
           // Base collectibles dahil tüm NFT'leri çek
           const apiUrl = `https://base-mainnet.g.alchemy.com/nft/v3/${alchemyKey}/getNFTsForOwner?owner=${walletAddress}&withMetadata=true&pageSize=100`
-          console.log('Fetching NFTs from Alchemy:', apiUrl.replace(alchemyKey, '***'))
 
           response = await fetch(apiUrl, {
             headers: {
               'Accept': 'application/json'
             }
           })
-
-          console.log('Alchemy response status:', response.status)
 
           if (!response.ok) {
             const errorText = await response.text()
@@ -192,23 +207,17 @@ function NFTConnector({ onNFTSelect, onWalletConnect, walletAddress: externalWal
           response = null
         }
       } else {
-        console.warn('No Alchemy API key found')
         // API yoksa
         response = null
       }
 
       if (response && response.ok) {
         const data = await response.json()
-        console.log('Alchemy API response:', JSON.stringify(data, null, 2))
 
         // Alchemy v3 response format: { ownedNfts: [...] }
         if (data.ownedNfts && Array.isArray(data.ownedNfts) && data.ownedNfts.length > 0) {
-          console.log('Total NFTs found:', data.ownedNfts.length)
-
           // NFT'leri formatla
           const formattedNfts = data.ownedNfts.map((nft, idx) => {
-            console.log(`NFT ${idx}:`, JSON.stringify(nft, null, 2))
-
             // Metadata'dan görsel URL'ini al
             let imageUrl = null
             if (nft.image?.cachedUrl) {
@@ -234,8 +243,6 @@ function NFTConnector({ onNFTSelect, onWalletConnect, walletAddress: externalWal
               title = title || 'NFT'
             }
 
-            console.log(`NFT ${idx} image:`, imageUrl, 'title:', title)
-
             return {
               ...nft,
               image: imageUrl,
@@ -245,18 +252,15 @@ function NFTConnector({ onNFTSelect, onWalletConnect, walletAddress: externalWal
             }
           })
 
-          console.log('Formatted NFTs:', formattedNfts)
           setNfts(formattedNfts)
           setError(null)
         } else {
           // NFT bulunamadı
-          console.log('No NFTs found in response')
           setNfts([])
           setError('No NFTs found in your wallet. You can still use custom images by entering an image URL.')
         }
       } else {
         // API yoksa veya hata varsa
-        console.log('No API response or error')
         setNfts([])
         if (!alchemyKey) {
           setError('NFT API not configured. You can still upload custom images.')
@@ -298,8 +302,6 @@ function NFTConnector({ onNFTSelect, onWalletConnect, walletAddress: externalWal
         tokenId: nft.tokenId || null
       }
 
-      console.log('Selected NFT:', nft)
-      console.log('Selected NFT Data:', nftData)
       onNFTSelect(nftData)
     }
     setShowModal(false)
@@ -312,7 +314,6 @@ function NFTConnector({ onNFTSelect, onWalletConnect, walletAddress: externalWal
       const reader = new FileReader()
       reader.onloadend = () => {
         const imageDataUrl = reader.result
-        console.log('Photo selected from gallery')
         // Gallery photo için NFT data formatı
         handleNFTSelect({
           image: imageDataUrl,
@@ -328,16 +329,20 @@ function NFTConnector({ onNFTSelect, onWalletConnect, walletAddress: externalWal
   return (
     <div className="nft-connector">
       <button
-        onClick={() => {
+        onClick={async () => {
+          // Base ortamında direkt wallet bağla ve modal aç
           if (!walletAddress) {
-            connectWallet()
-          } else {
-            setShowModal(true)
+            // Wallet bağlı değil, önce bağla
+            await connectWallet()
           }
+          
+          // Wallet bağlandı veya zaten bağlı - modal aç
+          setShowModal(true)
+          setError(null) // Önceki hataları temizle
         }}
         className="connect-button"
       >
-        {walletAddress ? 'Select NFT' : 'Connect NFT'}
+        Select NFT
       </button>
 
 
@@ -409,7 +414,6 @@ function NFTConnector({ onNFTSelect, onWalletConnect, walletAddress: externalWal
                         src={displayImage}
                         alt={nft.title || 'NFT'}
                         onError={(e) => {
-                          console.log('Image load error for:', displayImage)
                           e.target.src = 'https://via.placeholder.com/300?text=NFT'
                         }}
                       />
@@ -422,7 +426,7 @@ function NFTConnector({ onNFTSelect, onWalletConnect, walletAddress: externalWal
               ) : nfts.length === 0 ? (
                 <div className="no-nfts">
                   <p>No NFTs found in your wallet.</p>
-                  <p style={{ fontSize: '12px', marginTop: '8px', color: 'rgba(0,0,0,0.5)' }}>
+                  <p style={{ fontSize: '12px', marginTop: '8px', color: 'rgba(255,255,255,0.7)' }}>
                     Use the button above to upload a photo from your gallery.
                   </p>
                 </div>

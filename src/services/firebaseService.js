@@ -117,7 +117,7 @@ export const getLeaderboard = async (limitCount = 100) => {
 /**
  * Kullanıcının ödeme miktarını artır
  * @param {string} walletAddress - Kullanıcının wallet adresi
- * @param {number} amount - Eklenecek ödeme miktarı (ETH cinsinden)
+ * @param {number} amount - Eklenecek ödeme miktarı (USDC cinsinden)
  * @param {string} transactionHash - Transaction hash (opsiyonel)
  * @returns {Promise<boolean>}
  */
@@ -135,19 +135,11 @@ export const addPayment = async (walletAddress, amount, transactionHash = null) 
       throw new Error('Invalid payment amount')
     }
 
-    console.log('Adding payment:', {
-      walletAddress: normalizedAddress,
-      amount: amountNumber,
-      transactionHash
-    })
-
     // Kullanıcı verisi varsa güncelle, yoksa oluştur
     const userSnap = await getDoc(userRef)
-    console.log('User document exists:', userSnap.exists())
     
     if (userSnap.exists()) {
       const currentData = userSnap.data()
-      console.log('Current user data:', currentData)
       const currentTotal = parseFloat(currentData.totalPaid || 0)
       const newTotal = currentTotal + amountNumber
 
@@ -162,9 +154,7 @@ export const addPayment = async (walletAddress, amount, transactionHash = null) 
         updateData.lastTransactionHash = transactionHash
       }
 
-      console.log('Updating user with data:', updateData)
       await updateDoc(userRef, updateData)
-      console.log('Payment updated successfully:', { newTotal })
     } else {
       // Yeni kullanıcı oluştur
       const newUserData = {
@@ -179,17 +169,12 @@ export const addPayment = async (walletAddress, amount, transactionHash = null) 
         newUserData.lastTransactionHash = transactionHash
       }
 
-      console.log('Creating new user with data:', newUserData)
       await setDoc(userRef, newUserData)
-      console.log('New user created with payment:', { amountNumber })
     }
 
     // Veriyi tekrar okuyarak doğrula
     const verifySnap = await getDoc(userRef)
-    if (verifySnap.exists()) {
-      console.log('Payment verified in Firestore:', verifySnap.data())
-    } else {
-      console.error('Payment verification failed - document not found after save!')
+    if (!verifySnap.exists()) {
       throw new Error('Payment save verification failed')
     }
 
@@ -287,6 +272,117 @@ export const updateUserDisplay = async (walletAddress, data) => {
   } catch (error) {
     console.error('Error updating user display:', error)
     throw error
+  }
+}
+
+/**
+ * Yeni mood pack oluştur
+ * @param {string} creatorWallet - Creator'ın wallet adresi
+ * @param {object} packData - { name, description, price, images }
+ * @returns {Promise<string>} - Oluşturulan pack'in ID'si
+ */
+export const createMoodPack = async (creatorWallet, packData) => {
+  try {
+    if (!creatorWallet) {
+      throw new Error('Creator wallet address is required')
+    }
+
+    const packsRef = collection(db, 'moodPacks')
+    const newPackRef = doc(packsRef)
+
+    const packDocument = {
+      id: newPackRef.id,
+      creatorWallet: creatorWallet.toLowerCase(),
+      name: packData.name,
+      description: packData.description,
+      price: parseFloat(packData.price),
+      images: packData.images || [],
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      isActive: true
+    }
+
+    await setDoc(newPackRef, packDocument)
+    return newPackRef.id
+  } catch (error) {
+    console.error('Error creating mood pack:', error)
+    throw error
+  }
+}
+
+/**
+ * Creator'ın oluşturduğu tüm packleri getir
+ * @param {string} creatorWallet - Creator'ın wallet adresi
+ * @returns {Promise<Array>}
+ */
+export const getCreatorPacks = async (creatorWallet) => {
+  try {
+    if (!creatorWallet) {
+      return []
+    }
+
+    const packsRef = collection(db, 'moodPacks')
+    const q = query(
+      packsRef,
+      orderBy('createdAt', 'desc')
+    )
+
+    const querySnapshot = await getDocs(q)
+    const packs = []
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data()
+      // Sadece bu creator'a ait packleri filtrele
+      if (data.creatorWallet === creatorWallet.toLowerCase()) {
+        packs.push({
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toMillis() || Date.now(),
+          updatedAt: data.updatedAt?.toMillis() || Date.now()
+        })
+      }
+    })
+
+    return packs
+  } catch (error) {
+    console.error('Error getting creator packs:', error)
+    return []
+  }
+}
+
+/**
+ * Tüm aktif mood packleri getir (Marketplace için)
+ * @param {number} limitCount - Maksimum kaç pack getirilecek
+ * @returns {Promise<Array>}
+ */
+export const getAllMoodPacks = async (limitCount = 100) => {
+  try {
+    const packsRef = collection(db, 'moodPacks')
+    const q = query(
+      packsRef,
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    )
+
+    const querySnapshot = await getDocs(q)
+    const packs = []
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data()
+      if (data.isActive) {
+        packs.push({
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toMillis() || Date.now(),
+          updatedAt: data.updatedAt?.toMillis() || Date.now()
+        })
+      }
+    })
+
+    return packs
+  } catch (error) {
+    console.error('Error getting mood packs:', error)
+    return []
   }
 }
 
