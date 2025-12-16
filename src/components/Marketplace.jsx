@@ -143,59 +143,133 @@ function Marketplace({ walletAddress, onPurchase }) {
         }
 
         // Fetch all series info from contract and metadata from baseUri
-        // Try both 0-indexed and 1-indexed approaches
         const packsPromises = [];
-        for (let i = 0; i < totalSeriesNumber; i++) {
+        for (let i = 1; i < totalSeriesNumber + 1; i++) {
           packsPromises.push(
             contract
               .getSeriesInfo(i)
               .then(async (seriesInfo) => {
-                const tokenId = i;
-                const creator = seriesInfo[0];
-                const maxSupply = seriesInfo[1].toString();
-                const mintedSupply = seriesInfo[2].toString();
-                const mintPrice = seriesInfo[3].toString();
-                const baseUri = seriesInfo[4];
+                try {
+                  const tokenId = i;
+                  const creator = seriesInfo[0];
+                  const maxSupply = seriesInfo[1].toString();
+                  const mintedSupply = seriesInfo[2].toString();
+                  const mintPrice = seriesInfo[3].toString();
+                  const baseUri = seriesInfo[4];
 
-                // Use baseUri directly as image URL
-                const images =
-                  baseUri && baseUri.trim() !== "" ? [baseUri] : [];
-                const name = `Series #${tokenId}`;
-                const description = "NFT Series Collection";
+                  // Fetch metadata from baseUri if it's a JSON URL
+                  let name = `Series #${tokenId}`;
+                  let description = "NFT Series Collection";
+                  let images = [];
 
-                // Convert mintPrice from wei (6 decimals for USDC) to USDC
-                const priceInUSDC = ethers.formatUnits(mintPrice, 6);
+                  if (baseUri && baseUri.trim() !== "") {
+                    try {
+                      // If baseUri is a JSON metadata URL, fetch it
+                      if (baseUri.startsWith("http")) {
+                        const metadataResponse = await fetch(baseUri);
+                        if (metadataResponse.ok) {
+                          const metadata = await metadataResponse.json();
+                          name = metadata.name || name;
+                          description = metadata.description || description;
+                          
+                          // Get images from metadata
+                          if (metadata.image) {
+                            // Convert ipfs:// to gateway URL if needed
+                            const imageUrl = metadata.image.startsWith('ipfs://')
+                              ? metadata.image.replace('ipfs://', 'https://ipfs.io/ipfs/')
+                              : metadata.image;
+                            images = [imageUrl];
+                          }
+                          if (metadata.properties?.images && Array.isArray(metadata.properties.images)) {
+                            images = metadata.properties.images.map(img => 
+                              img.startsWith('ipfs://')
+                                ? img.replace('ipfs://', 'https://ipfs.io/ipfs/')
+                                : img
+                            );
+                          }
+                        } else {
+                          // If not JSON or fetch fails, use baseUri as image
+                          images = [baseUri];
+                        }
+                      } else if (baseUri.startsWith("ipfs://")) {
+                        // IPFS protocol URL
+                        images = [baseUri.replace('ipfs://', 'https://ipfs.io/ipfs/')];
+                      } else {
+                        images = [baseUri];
+                      }
+                    } catch (err) {
+                      console.warn(`Failed to fetch metadata for tokenId ${tokenId}:`, err);
+                      // Fallback: use baseUri as image
+                      images = baseUri.startsWith("ipfs://")
+                        ? [baseUri.replace('ipfs://', 'https://ipfs.io/ipfs/')]
+                        : [baseUri];
+                    }
+                  }
 
+                  // Convert mintPrice from wei (6 decimals for USDC) to USDC
+                  const priceInUSDC = ethers.formatUnits(mintPrice, 6);
+
+                  return {
+                    id: tokenId,
+                    tokenId: tokenId,
+                    name: name,
+                    description: description,
+                    price: priceInUSDC,
+                    images: images,
+                    image: images[0] || null,
+                    creator: {
+                      wallet: creator,
+                      username: null,
+                      avatar: null,
+                    },
+                    maxSupply: maxSupply,
+                    mintedSupply: mintedSupply,
+                    baseUri: baseUri,
+                    contractAddress: RETRO1155_CONTRACT_ADDRESS,
+                  };
+                } catch (innerError) {
+                  console.error(`Error processing series ${i}:`, innerError);
+                  return null;
+                }
+              })
+              .catch((error) => {
+                // Log the error but don't filter it out - show it anyway
+                console.error(`Error fetching series ${i}:`, error);
+                // Return a placeholder pack so we can see which one failed
                 return {
-                  id: tokenId,
-                  tokenId: tokenId,
-                  name: name,
-                  description: description,
-                  price: priceInUSDC,
-                  images: images,
-                  image: images[0] || null,
+                  id: i,
+                  tokenId: i,
+                  name: `Series #${i} (Error)`,
+                  description: `Failed to load: ${error.message}`,
+                  price: "0",
+                  images: [],
+                  image: null,
                   creator: {
-                    wallet: creator,
+                    wallet: "0x0000...0000",
                     username: null,
                     avatar: null,
                   },
-                  maxSupply: maxSupply,
-                  mintedSupply: mintedSupply,
-                  baseUri: baseUri,
+                  maxSupply: "0",
+                  mintedSupply: "0",
+                  baseUri: "",
                   contractAddress: RETRO1155_CONTRACT_ADDRESS,
+                  error: true,
                 };
-              })
-              .catch((error) => {
-                // If series doesn't exist, return null to filter it out
-                console.warn(`Series ${i} does not exist:`, error.message);
-                return null;
               })
           );
         }
 
         const allPacks = await Promise.all(packsPromises);
-        // Filter out null values (non-existent series)
-        const mergedPacks = allPacks.filter((pack) => pack !== null);
+        // Filter out only null values, keep error packs for debugging
+        const contractPacks = allPacks.filter((pack) => pack !== null);
+        
+        // Sort by tokenId ascending
+        contractPacks.sort((a, b) => a.tokenId - b.tokenId);
+        
+        // Merge contract packs with mock data
+        const mergedPacks = [...contractPacks, ...mockMoodPacks];
+        
+        console.log(`Loaded ${contractPacks.length} packs from contract and ${mockMoodPacks.length} mock packs (total: ${mergedPacks.length})`);
 
         setMoodPacks(mergedPacks);
       } catch (err) {

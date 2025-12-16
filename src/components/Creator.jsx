@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import ImageCropper from "./ImageCropper";
 import heic2any from "heic2any";
 import { createMoodPack, getCreatorPacks } from "../services/firebaseService";
+import { uploadImageToIPFS, uploadMetadataToIPFS, resolveIPFSUri } from "../services/thirdwebService";
 import Retro1155Abi from "../abis/Retro1155Abi.json";
 import "./Creator.css";
 
@@ -27,6 +28,9 @@ function Creator({ walletAddress, userProfile }) {
   const [success, setSuccess] = useState("");
   const [myPacks, setMyPacks] = useState([]);
   const [loadingPacks, setLoadingPacks] = useState(false);
+  const [ipfsUris, setIpfsUris] = useState([]); // IPFS URI'leri
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [toast, setToast] = useState(null); // Toast notification
   const MAX_IMAGES = 5;
 
   // Load creator's packs when wallet changes or tab switches to myCreations
@@ -46,6 +50,39 @@ function Creator({ walletAddress, userProfile }) {
     };
     loadMyPacks();
   }, [walletAddress, activeTab]);
+
+  // Toast göster ve otomatik kapat
+  const showToast = (message, ipfsUri = null) => {
+    setToast({ message, ipfsUri, timestamp: Date.now() });
+    setTimeout(() => setToast(null), 5000); // 5 saniye sonra kapat
+  };
+
+  // Görseli IPFS'e yükle
+  const uploadToIPFS = async (dataUrl, index) => {
+    try {
+      setUploadingImage(true);
+      console.log(`Uploading image ${index + 1} to IPFS...`);
+      const uri = await uploadImageToIPFS(dataUrl, `mood_image_${index + 1}.jpg`);
+      console.log(`Image ${index + 1} uploaded to IPFS:`, uri);
+      
+      // Gateway URL'ini oluştur
+      const gatewayUrl = resolveIPFSUri(uri);
+      
+      setIpfsUris((prev) => [...prev, uri]);
+      setUploadingImage(false);
+      
+      // Toast göster
+      showToast(`Image ${index + 1} uploaded to IPFS!`, gatewayUrl);
+      
+      return uri;
+    } catch (err) {
+      console.error("IPFS upload error:", err);
+      setError("Failed to upload image to IPFS: " + err.message);
+      setUploadingImage(false);
+      showToast(`Failed to upload image ${index + 1}: ${err.message}`);
+      return null;
+    }
+  };
 
   const convertHeicIfNeeded = async (file) => {
     const isHeic =
@@ -97,16 +134,19 @@ function Creator({ walletAddress, userProfile }) {
         const processedFile = await convertHeicIfNeeded(file);
 
         const reader = new FileReader();
-        reader.onloadend = () => {
+        reader.onloadend = async () => {
           const img = new Image();
-          img.onload = () => {
+          img.onload = async () => {
             // Check if image needs cropping (larger than 240x280)
             if (img.width > 240 || img.height > 280) {
               setImageToCrop(reader.result);
               setCropIndex(selectedImages.length);
             } else {
+              // Önce preview ekle
               setSelectedImages((prev) => [...prev, processedFile]);
               setImagePreviews((prev) => [...prev, reader.result]);
+              // Hemen IPFS'e yükle
+              await uploadToIPFS(reader.result, selectedImages.length);
             }
           };
           img.src = reader.result;
@@ -119,11 +159,13 @@ function Creator({ walletAddress, userProfile }) {
     setError("");
   };
 
-  const handleCropComplete = (croppedImageUrl) => {
+  const handleCropComplete = async (croppedImageUrl) => {
     setSelectedImages((prev) => [...prev, croppedImageUrl]);
     setImagePreviews((prev) => [...prev, croppedImageUrl]);
     setImageToCrop(null);
     setCropIndex(null);
+    // Crop tamamlandıktan sonra IPFS'e yükle
+    await uploadToIPFS(croppedImageUrl, selectedImages.length);
   };
 
   const handleCropCancel = () => {
@@ -134,6 +176,7 @@ function Creator({ walletAddress, userProfile }) {
   const handleRemoveImage = (index) => {
     setSelectedImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    setIpfsUris((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleDragOver = (e) => {
@@ -166,16 +209,19 @@ function Creator({ walletAddress, userProfile }) {
         const processedFile = await convertHeicIfNeeded(file);
 
         const reader = new FileReader();
-        reader.onloadend = () => {
+        reader.onloadend = async () => {
           const img = new Image();
-          img.onload = () => {
+          img.onload = async () => {
             // Check if image needs cropping (larger than 240x280)
             if (img.width > 240 || img.height > 280) {
               setImageToCrop(reader.result);
               setCropIndex(selectedImages.length);
             } else {
+              // Önce preview ekle
               setSelectedImages((prev) => [...prev, processedFile]);
               setImagePreviews((prev) => [...prev, reader.result]);
+              // Hemen IPFS'e yükle
+              await uploadToIPFS(reader.result, selectedImages.length);
             }
           };
           img.src = reader.result;
@@ -204,11 +250,40 @@ function Creator({ walletAddress, userProfile }) {
       return;
     }
 
+    // Tüm görsellerin IPFS'e yüklendiğini kontrol et
+    if (ipfsUris.length !== selectedImages.length) {
+      setError("Please wait for all images to finish uploading to IPFS");
+      return;
+    }
+
     setIsCreating(true);
     setError("");
 
     try {
-      // Get provider and signer for Base network
+      // Step 1: Metadata JSON'u oluştur ve IPFS'e yükle
+      console.log("Creating metadata JSON and uploading to IPFS...");
+      console.log("Image URIs:", ipfsUris);
+      
+      let metadataUri;
+      try {
+        metadataUri = await uploadMetadataToIPFS({
+          name: packName,
+          description: packDescription,
+          price: packPrice,
+          images: ipfsUris,
+          creator: walletAddress,
+        });
+        console.log("Metadata uploaded to IPFS:", metadataUri);
+      } catch (ipfsError) {
+        console.error("Metadata upload failed:", ipfsError);
+        throw new Error("Failed to upload metadata to IPFS: " + ipfsError.message);
+      }
+
+      // baseUri'yi oluştur (gateway URL)
+      const baseUri = resolveIPFSUri(metadataUri);
+      console.log("BaseUri:", baseUri);
+
+      // Step 2: Get provider and signer for Base network
       let provider = null;
       if (window.base && window.base.ethereum) {
         provider = window.base.ethereum;
@@ -268,11 +343,7 @@ function Creator({ walletAddress, userProfile }) {
       // Convert price to USDC format (6 decimals)
       const mintPrice = ethers.parseUnits(packPrice, 6);
 
-      // Mock baseUri
-      const baseUri =
-        "https://node1.irys.xyz/1lDmg0hQ7yzd9v2KSYeSvKqMPCubW-eM_44neAQWacM"; //TODO: Change to actual baseUri
-
-      // Call createSeries on the contract
+      // Call createSeries on the contract with IPFS baseUri
       const tx = await contract.createSeries(
         walletAddress, // creator
         baseUri, // baseUri
@@ -311,12 +382,17 @@ function Creator({ walletAddress, userProfile }) {
         }
       }
 
-      // Create mood pack with image previews (base64 data URLs) and tokenId
+      // Create mood pack with IPFS URLs and tokenId
       const packData = {
         name: packName,
         description: packDescription,
         price: packPrice,
-        images: imagePreviews, // base64 data URLs
+        images: ipfsUris.map((uri) =>
+          uri.replace("ipfs://", "https://ipfs.io/ipfs/")
+        ), // IPFS gateway URLs for display
+        imageUris: ipfsUris, // Raw IPFS URIs
+        metadataUri: metadataUri,
+        baseUri: baseUri,
         tokenId: tokenId, // NFT token ID from contract
         contractAddress: RETRO1155_CONTRACT_ADDRESS,
         txHash: receipt.hash,
@@ -335,6 +411,7 @@ function Creator({ walletAddress, userProfile }) {
       // Reset form
       setSelectedImages([]);
       setImagePreviews([]);
+      setIpfsUris([]);
       setPackName("");
       setPackDescription("");
       setPackPrice("1.00");
@@ -348,8 +425,10 @@ function Creator({ walletAddress, userProfile }) {
         );
       } else if (err.message?.includes("network")) {
         setError("Network error. Please check your connection and try again.");
+      } else if (err.message?.includes("IPFS")) {
+        setError(err.message);
       } else {
-        setError("Failed to create mood pack");
+        setError("Failed to create mood pack: " + (err.message || "Unknown error"));
       }
     } finally {
       setIsCreating(false);
@@ -364,6 +443,37 @@ function Creator({ walletAddress, userProfile }) {
           onCropComplete={handleCropComplete}
           onCancel={handleCropCancel}
         />
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="ipfs-toast">
+          <div className="toast-content">
+            <div className="toast-icon">✓</div>
+            <div className="toast-message">
+              <p>{toast.message}</p>
+              {toast.ipfsUri && (
+                <a
+                  href={toast.ipfsUri}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="toast-link"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {toast.ipfsUri.length > 60
+                    ? toast.ipfsUri.substring(0, 60) + "..."
+                    : toast.ipfsUri}
+                </a>
+              )}
+            </div>
+            <button
+              className="toast-close"
+              onClick={() => setToast(null)}
+            >
+              ×
+            </button>
+          </div>
+        </div>
       )}
 
       <div className="creator-container">
@@ -400,10 +510,17 @@ function Creator({ walletAddress, userProfile }) {
                       <button
                         className="remove-image-btn"
                         onClick={() => handleRemoveImage(index)}
+x                        disabled={uploadingImage}
                       >
                         ×
                       </button>
                       <span className="image-number">{index + 1}</span>
+                      {/* IPFS upload status */}
+                      {ipfsUris[index] ? (
+                        <span className="ipfs-status uploaded" title={ipfsUris[index]}>✓ IPFS</span>
+                      ) : (
+                        <span className="ipfs-status uploading">⏳</span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -509,7 +626,9 @@ function Creator({ walletAddress, userProfile }) {
                 onClick={handleCreatePack}
                 disabled={
                   isCreating ||
+                  uploadingImage ||
                   selectedImages.length === 0 ||
+                  ipfsUris.length !== selectedImages.length ||
                   !packName ||
                   !packDescription ||
                   !packPrice
@@ -517,6 +636,10 @@ function Creator({ walletAddress, userProfile }) {
               >
                 {isCreating
                   ? "Creating..."
+                  : uploadingImage
+                  ? "Uploading to IPFS..."
+                  : ipfsUris.length !== selectedImages.length
+                  ? "Waiting for IPFS upload..."
                   : `Create Mood Pack ${
                       selectedImages.length > 0
                         ? `(${selectedImages.length} image${
